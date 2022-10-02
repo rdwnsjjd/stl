@@ -1,0 +1,65 @@
+// Copyright (C) 2022 Emad
+// 
+// This file is part of sandikCpp.
+// 
+// sandikCpp is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// sandikCpp is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
+
+#ifndef _FRAMEWORK_STL_COLLECTIONS_PAIR_INC_
+#define _FRAMEWORK_STL_COLLECTIONS_PAIR_INC_
+
+
+#include "Framework/Basics/Inc"
+#include "Framework/Primitives/Inc"
+
+using namespace framework::basics;
+
+
+namespace stl { namespace collections {
+    
+    template <Movable First, Movable Last>
+    class Pair: public Mover {
+      private:
+        First _first;
+        Last  _last;
+
+        Pair(First&& first, Last&& last): 
+            _first(first), 
+            _last(moveObj(last)) 
+        { /* nothing */ }
+
+      public:
+        Pair(Pair&& obj) {
+            this->_first = obj._first;
+            this->_last  = obj._last;
+        }
+
+        static inline Fn create(First&& start, Last&& last) -> Pair {
+            return Pair(moveObj(start), moveObj(last));
+        }
+
+        inline Fn first() -> First {
+            return this->_first;
+        }
+
+        inline Fn last() -> Last {
+            return this->_last;
+        }
+    };
+
+
+} // namespace iter
+} // namespace stl
+
+
+#endif // _FRAMEWORK_STL_COLLECTIONS_PAIR_INC_

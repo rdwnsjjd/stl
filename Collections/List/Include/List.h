@@ -1,350 +1,347 @@
-// // Copyright (C) 2022 Emad
-// // 
-// // This file is part of sandikCpp.
-// // 
-// // sandikCpp is free software: you can redistribute it and/or modify
-// // it under the terms of the GNU General Public License as published by
-// // the Free Software Foundation, either version 3 of the License, or
-// // (at your option) any later version.
-// // 
-// // sandikCpp is distributed in the hope that it will be useful,
-// // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// // GNU General Public License for more details.
-// // 
-// // You should have received a copy of the GNU General Public License
-// // along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
+// Copyright (C) 2022 Emad
+// 
+// This file is part of sandikCpp.
+// 
+// sandikCpp is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+// 
+// sandikCpp is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+// 
+// You should have received a copy of the GNU General Public License
+// along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
 
-// #ifndef _FRAMEWORK_STL_COLLECTIONS_LIST_INCLUDE_LIST_H_
-// #define _FRAMEWORK_STL_COLLECTIONS_LIST_INCLUDE_LIST_H_
+#ifndef _COLLECTIONS_LIST_INCLUDE_LIST_
+#define _COLLECTIONS_LIST_INCLUDE_LIST_
 
-// #include <iostream>
-// #include <type_traits>
-// using namespace std;
+#include <iostream>
 
-// #include "Framework/STL/Mem/Alloc/Inc"
-// #include "Framework/STL/Iter/Inc"
-// #include "Framework/Primitives/Inc"
-// #include "Framework/Basics/Inc"
+#include "Framework/STL/Mem/Alloc/Include/Default.h"
+#include "Framework/STL/Mem/Ptr/Include/RawPtr.h"
+#include "Framework/STL/Iter/Include/Iterator.h"
+#include "Framework/Primitives/Result.h"
+#include "Framework/Primitives/Option.h"
+#include "Framework/Basics/BasicTypes.h"
+#include "Framework/Basics/BasicDefs.h"
+#include "Framework/Basics/OwnerShip.h"
 
-// using namespace stl::mem::alloc;
-// using namespace stl::iter;
-// using namespace framework::basics;
+namespace stl { namespace collections {
 
-// namespace stl { namespace collections {
+    using namespace stl::mem::alloc;
+    using namespace stl::mem;
+    using namespace stl::iter;
+    using namespace framework::basics;
+
+
+    template<Movable T, Allocator A>
+    class List;
+
+
+    template<Movable T>
+    class ListNode: public Mover, public CanBeCopied<ListNode<T>>, public Dropper {
+        template<Movable U, Allocator A> friend class List;
+      protected:
+        T                           _data;
+        Option<RawPtr<ListNode<T>>> _next;
+        Option<RawPtr<ListNode<T>>> _prev;
+
+        ListNode(
+            T data, 
+            Option<RawPtr<ListNode<T>>> next, 
+            Option<RawPtr<ListNode<T>>> prev
+        ): _data(move_obj(data)), _next(move_obj(next)), _prev(move_obj(prev)) { }
+
+      public:
+        ListNode(T data): _data(data) { }
+
+        ListNode(ListNode&& obj) {
+            this->_data = obj._data;
+            this->_next = obj._next;
+            this->_prev = obj._prev;
+            obj.drop();
+        }
+
+        static inline Fn create(
+            T data, 
+            Option<RawPtr<ListNode<T>>> next = optNone(RawPtr<ListNode<T>>), 
+            Option<RawPtr<ListNode<T>>> prev = optNone(RawPtr<ListNode<T>>)
+        ) -> ListNode;
+
+        inline Fn copy() -> ListNode override;
+
+        inline Fn get_data() -> const T&;
+
+        inline Fn get_mut_data() -> T&;
+
+        inline Fn set_next(MPtr next) -> Void;
+
+        inline Fn get_next() -> MPtr const;
+
+        inline Fn set_prev(MPtr prev) -> Void;
+
+        inline Fn get_prev() -> MPtr const;
+
+        inline Fn operator =(ListNode&& obj) -> Void;
+    };
+
+
+
+    /* Self Implementation for ListNode */
+
+    template<Movable T>
+    inline Fn ListNode<T>::create(
+        T data, 
+        Option<RawPtr<ListNode<T>>> next, 
+        Option<RawPtr<ListNode<T>>> prev
+    ) -> ListNode {
+        return ListNode(move_obj(data), move_obj(next), move_obj(prev));
+    } 
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::copy() -> ListNode {
+        CONST_IF (IsPrimitive<T>) {
+            return ListNode(this->_data, move_obj(this->_next), move_obj(this->_prev));
+        }
+        CONST_ELSE {
+            return ListNode(this->_data.copy(), move_obj(this->_next), move_obj(this->_prev));
+        }
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::get_data() -> const T& {
+        return this->_data;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::get_mut_data() -> T& {
+        return this->_data;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::set_next(MPtr next) -> Void {
+        this->_next = (ListNode<T>*) next;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::get_next() -> MPtr const {
+        return (MPtr) this->_next;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::set_prev(MPtr prev) -> Void {
+        this->_prev = (ListNode<T>*) prev;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::get_prev() -> MPtr const {
+        return (MPtr) this->_prev;
+    }
+
+
+    template<Movable T>
+    inline Fn ListNode<T>::operator =(ListNode&& obj) -> Void {
+        this->_data = obj._data;
+        this->_next = obj._next;
+        this->_prev = obj._prev;
+        obj.drop();
+    }
         
-//     // const Size DEFAULT_ALLOCATION_SIZE = 32;
-//     // #define create_proper_allocation_size_(size_)  DEFAULT_ALLOCATION_SIZE * (size_ / DEFAULT_ALLOCATION_SIZE + (size_ % DEFAULT_ALLOCATION_SIZE == 0 ? 0 : 1))
-
-//     template<Movable M>
-//     class ListNode {
-//       protected:
-//         M         _data;
-//         ListNode* _next;
-//         ListNode* _prev;
-
-//         friend class List;
-
-//         ListNode(){ }
-
-//         ListNode(M data, ListNode* next, ListNode* prev):
-//             _data(moveObj(data)),
-//             _next(next),
-//             _prev(prev)
-//         { }
-
-//         static inline ListNode create(M data, ListNode* next = nullptr, ListNode* prev = nullptr) {
-//             return ListNode(moveObj(data), next, prev);
-//         }
-//     }; 
-
-
-//     // template <Allocator A = DefaultAllocator>
-//     class List: public Sized, public Mover {
-//       protected:
-//         Void*     _head;
-//         Void*     _tail;
-//         MSize     _len;
-//         // A         _allocator;
-
-//         template<Movable M> inline List(M* array, Size size);
-
-//       public:
-//         inline List():
-//             _len(0) 
-//         { /* nothing */ }
-
-//         inline ~List();
-
-//         List(List&& obj);
-
-//         static inline Fn create() -> List {
-//             return List();
-//         }
-
-//         static inline Fn copy() -> List;
-
-//         template<Movable M> 
-//         static inline Fn from(M* array, Size size) -> List;
-
-//         static inline Fn from(List&& LISTtor) -> List;
-
-//         template <Iterable I> static inline Fn from(I&& obj) -> List;
-
-//         inline Fn len() -> MSize;
-
-//         template<Movable M>
-//         inline Fn push(M&& data) -> Void;
-
-//         template<Movable M>
-//         inline Fn push(M* byt, Size size) -> Void;
-        
-//         inline Fn push(List&& list) -> Void;
     
-//         template<Movable M>
-//         inline Fn pop() -> M;
+    /* ############################################################################################################################### */
+    
+    template<Movable T, Allocator A = DefaultAllocator>
+    class List: private Mover, private CanBeCopied<List<T, A>>, Dropper {
+        Option<RawPtr<ListNode<T>>>  _head;
+        Option<RawPtr<ListNode<T>>>  _tail;
+        MSize                        _len;
 
-//         template<Movable M>
-//         inline Fn get(Idx idx) -> M&;
-
-//         inline Fn destroy() -> Void;
-
-//         Fn operator =(List&& obj) -> Void;
-
-//         template<Movable M>
-//         Fn operator [](Idx idx) -> M&;
-
-//         // template<Movable M>
-//         // inline Fn next() -> Option<M> override;
-
-//         // template<Movable M>
-//         // inline Fn begin() -> M* override;
-
-//         // template<Movable M>
-//         // inline Fn end() -> M* override;
-
-//         inline Fn move() -> Void override;
-
-//         inline Fn size() -> MSize override;
-
-//         template<Movable M>
-//         inline Fn print() -> Void;
-
-//     };
+        List(Option<RawPtr<ListNode<T>>> head, Option<RawPtr<ListNode<T>>> tail, Size len): 
+            _head(move_obj(head)), 
+            _tail(move_obj(tail)), 
+            _len(len) 
+        { }
 
 
-//     /* Self Implementations For List */
+      public:
+        List() { }
 
-//     inline List::List(List&& obj) {
-//         this->_head = obj._head;
-//         this->_tail = obj._tail;
-//         this->_len  = obj._len;
-//     }
+        List(List&& obj): _head(move_obj(obj._head)), _tail(move_obj(obj._tail)), _len(obj._len) {
+            obj.drop();
+        }
+
+        static inline Fn create() -> List;
+
+        inline Fn copy() -> List;
+
+        inline Fn push_back(T data) -> EResult<$>;
+
+        UNSAFE inline Fn unlink_node(RawPtr<ListNode<T>> node);
+
+        inline Fn pop_back() -> Option<T>;
+        
+        inline Fn is_empty() -> MBool;
+
+        inline Fn len() -> MSize;
+
+        inline Fn append() -> EResult<$>;
+
+        inline Fn operator =(List&& obj) -> Void;
+
+        static Fn test() -> $;
+    };
+
+    Let test = List<$>::test();
 
 
-//     inline Fn List::copy() -> List {
-//         // return self;
-//     }
+    /* Self Implementation for List */
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::create() -> List {
+        return List(optNone(RawPtr<ListNode<T>>), optNone(RawPtr<ListNode<T>>), 0);
+    }
 
 
-//     template<Movable M>
-//     inline List::List(M* array, Size size) {
-//         Let prev = (ListNode<M>**) &this->_head;
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::copy() -> List {
+        return List(move_obj(this->_head), move_obj(this->_tail), this->_len);
+    }
 
-//         for (MIdx i = 0; i < size; i++) {
-//             Let node = new ListNode<M>(array[i], nullptr, nullptr);
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::is_empty() -> MBool {
+        return this->_len == 0;
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::len() -> MSize {
+        return this->_len;
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::push_back(T data) -> EResult<$> {
+        ListNode<T>* node = new ListNode<T>(move_obj(data));      // TODO: change this to use `malloc` instead of `new`
+
+        if (self._tail.is_some()) {
+            this->_tail.unwrap()->_next = optSome(RawPtr<ListNode<T>>, node);
+        }
+        else {
+            this->_head = optSome(RawPtr<ListNode<T>>, node);
+        }
+        
+        node->_prev = move_obj(this->_tail);
+        this->_tail = optSome(RawPtr<ListNode<T>>, node);
+        this->_len++;
+
+        return resOk($, _);
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::unlink_node(RawPtr<ListNode<T>> node) {
+        ListNode<T>* _node = node.as_mut_ptr();
+
+        if (_node->_prev.is_some()) {
+            _node->_prev.unwrap()->_next = move_obj(_node->_next);
+        }
+        else {
+            this->_head = move_obj(_node->_next);
+        }
+
+        if (_node->_next.is_some()) {
+            _node->_next.unwrap()->_prev = move_obj(_node->_prev);
+        }
+        else {
+            this->_tail = move_obj(_node->_prev);
+        }
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::pop_back() -> Option<T> {
+        if (this->_tail.is_none()) {
+            return optNone(T);
+        }
+        else {
+            Let item = optSome(T, ((ListNode<T>*) this->_tail.unwrap().as_ptr())->get_data());
+            this->_tail = move_obj(((ListNode<T>*) this->_tail.unwrap().as_ptr())->_prev);
+            this->_len--;
+            return item;
+        }
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::append() -> EResult<$> {
+
+    }
+
+
+    template<Movable T, Allocator A>
+    inline Fn List<T, A>::operator =(List&& obj) -> Void {
+        this->_head = move_obj(obj._head);
+        this->_tail = move_obj(obj._tail);
+        this->_len  = obj._len;
+        obj.drop();
+    }
+} // namespace collections 
+} // namespace stl
+
+
+namespace stl::collections {
+    
+    template<Movable T, Allocator A>
+    Fn List<T, A>::test() -> $ {
+        ADD_TEST(list_test_creation, []() -> MBool {
+            Let list = List<const char*>::create();
+            list.push_back("Salam");
+            list.push_back("Mostafa");
+            list.push_back("Khoobi?");
+
+            Let a = list.pop_back();
+            Let b = list.pop_back();
+            Let c = list.pop_back();
+            Let d = list.pop_back();
             
-//             if (this->_len != 0) {
-//                 (*prev)->_next = node;
-//                 node->_prev = (*prev);
-//                 this->_tail  = node;
-//                 prev = &(*prev)->_next;
-//             }
-//             else {
-//                 this->_head = node;
-//                 this->_tail = node;
-//             }
+            Let t = optSome(int, 5);
+            t.take();
 
-//             this->_len++;
-//         }
-//     }
+            return true;
+        });
 
 
-//     template<Movable M>
-//     inline Fn List::from(M* array, Size size) -> List {
-//         return List(array, size);
-//     }
+        ADD_TEST(list_test_unlink_node, []() -> MBool {
+            // Let list = List<const char*>::create();
+            // list.push_back("Salam");
+
+            // Let node = ListNode<const char*>::create("Mosi");
+            // Let ptr  = RawPtr<ListNode<const char*>>::from_ptr(&node);
+            // unsafe (
+            //     list.unlink_node(move_obj(ptr));
+            // )
+            return true;
+        });
 
 
-//     inline Fn List::from(List&& LISTtor) -> List {
-//         return List(moveObj(LISTtor));
-//     }
+        // static_assert(IsDerived<Mover, ListNode<char>>);
 
+        return _;
+    }
 
-//     template<Iterable I> 
-//     inline Fn List::from(I&& obj) -> List {
-//         Let list = List();
-//         Loop {
-//             Let val = obj.next();
-//             if (val.is_none()) {
-//                 break;
-//             }
-
-//             list.push(val.unwrap());
-//         }
-
-//         return list;
-//     }
-
-
-//     inline Fn List::len() -> MSize {
-//         return this->_len;
-//     }
-
-
-//     template<Movable M>
-//     inline Fn List::print() -> Void {
-//         Let elem = (ListNode<M>*) this->_head;
-
-//         cout << "{ ";
-//         for (MIdx i = 0; i < this->_len; i++) {
-//             // TODO: do not use cout
-//             cout << elem->_data << ", ";
-//             elem = elem->_next;
-//         }
-//         cout << "}" << '\n';
-//     }
-
-
-//     template<Movable M>
-//     inline Fn List::push(M&& data) -> Void {
-//         Let node = new ListNode<M>(moveObj(data));
-//         ((ListNode<M>*) this->_tail)->_next = node;
-//         this->_len++;
-//     }
-
-
-//     inline Fn List::push(List&& list) -> Void {
-//         // Let len = list.len();
-//         // Let elem = list._head;
-        
-//         // for (MIdx i = 0; i < len; i++) {
-//         //     this->push((ListNode<M>*) elem);
-//         // }
-//     }
-
- 
-//     template<Movable M>
-//     inline Fn List::push(M* byt, Size size) -> Void {
-//         Let len = this->_len;
-//         Let elem = this->_head;
-
-//         for (MIdx i = 0; i < len; i++) {
-//             this->push((ListNode<M>*) elem);
-//         }
-//     }
-
-
-//     template<Movable M>
-//     inline Fn List::pop() -> M {
-//         Let to_be_popped = this->_tail;
-//         ((ListNode<M>*) this->_tail)->_prev = nullptr;
-
-//         this->_len--;
-//         return to_be_popped;
-//     }
-
-
-//     template<Movable M>
-//     inline Fn List::get(Idx idx) -> M& {
-//         // TODO: check bounds 
-        
-//         Let len  = this->_len;
-//         Let elem = this->_head;
-
-//         for (MIdx i = 0; i < len; i++) {
-//             if (i == idx) {
-//                 return elem;
-//             }
-//             elem = ((ListNode<M>*) elem)->_next;
-//         }
-//     }
-
-
-//     inline Fn List::destroy () -> Void {
-//         // TODO
-//         Let elem = this->_head;
-
-//         for (MIdx i = 0; i < this->_len; i++) {
-//             // Let next = elem->
-//             delete elem;
-//         }
-//     }
-
-
-//     // template<Allocator A> 
-//     inline List::~List () {
-//         if (!this->check_move()) {
-//             this->destroy();
-//         }
-//     }
-
-
-//     // /* Iterator Implementations */
-
-//     // template<Allocator A> 
-//     // inline Fn List::next() -> Option<M> {
-//     //     return Option<M>::None;
-//     // }
-
-
-//     // template<Allocator A> 
-//     // inline Fn List::begin() -> M* {
-//     //     return this->_inner.ptr();
-//     // }
-
-
-//     // template<Allocator A> 
-//     // inline Fn List::end() -> M* {
-//     //     return this->_inner.ptr() + this->_len;
-//     // }
+} // namespace name
 
 
 
-//     // /* Move Implementations */
-
-//     inline Fn List::move() -> Void {
-//         this->is_moved = true;
-//     }
-
-
-
-//     // /* Sized Implementations */
-
-//     inline Fn List::size() -> MSize {
-//         // return this->_inner.size() + sizeof(this->_len);
-//     }
-
-
-
-//     // /* Operator Overloading */
-
-//     inline Fn List::operator =(List&& obj) -> Void {
-//         this->_head = obj._head;
-//         this->_tail = obj._tail;
-//         this->_len  = obj._len;
-//     }
-
-//     template<Movable M> 
-//     inline Fn List::operator [](Idx idx) -> M& {
-//         // return this->get(idx);
-//     }
-
-    
-// } // namespace basics 
-// } // namespace framework
-
-
-
-
-// #endif // _FRAMEWORK_STL_COLLECTIONS_LIST_INCLUDE_LIST_H_
+#endif /* _COLLECTIONS_LIST_INCLUDE_LIST_ */

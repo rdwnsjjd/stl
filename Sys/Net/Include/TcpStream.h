@@ -57,7 +57,7 @@ namespace stl { namespace net {
 
         inline Fn bind(UInt32 portno, SSize attempt = 0, Size timeout_msec = 0) -> EResult<TcpStream*>;
 
-        template<typename Func> inline Fn listen(Func callback, UInt32 max_conn = 20) -> EResult<__>;
+        template<typename Func> inline Fn listen(Func callback, UInt32 max_conn = 20) -> EResult<$>;
 
         inline Fn send(Bytes data, Size size) -> EResult<MUInt32>;
 
@@ -125,11 +125,11 @@ namespace stl { namespace net {
 
 
     template<typename Func>
-    inline Fn TcpStream::listen(Func callback, UInt32 max_conn) -> EResult<__> {
+    inline Fn TcpStream::listen(Func callback, UInt32 max_conn) -> EResult<$> {
         Let res = ::listen(this->_fd, max_conn);
         assertRetOs(
             res != -1,
-            EResult<__>::err(Error(EK::ConnectionFailure)), 
+            EResult<$>::err(Error(EK::ConnectionFailure)), 
             "Failed to listen to connections using this socket: `%d`!", this->_fd
         );
 
@@ -139,12 +139,12 @@ namespace stl { namespace net {
         Let client_fd = ::accept(this->_fd,  (struct sockaddr*) &client_addr,  (socklen_t*)&caddr_len);
         assertRetOs(
             res != -1,
-            EResult<__>::err(Error(EK::ConnectionFailure)), 
+            EResult<$>::err(Error(EK::ConnectionFailure)), 
             "Failed to accept connections on this socket: `%d`!", this->_fd
         );
 
         callback(TcpStream(client_fd, client_addr));
-        return EResult<__>::Ok($);
+        return EResult<$>::Ok(_);
     }
 
 

@@ -30,18 +30,18 @@ namespace stl { namespace sys { namespace sync {
     using namespace stl::mem::alloc;
 
     template<Movable T>
-    class RawArc: public Mover, CanBeCopied<RawArc<T>> {
+    class RawArc: public Mover {
         T     data;
-        MSize counter;
+        MSize counter = 1;
 
-        RawArc(T data): data(moveObj(data)), counter(1) {  };
+        RawArc(T data): data(move_obj(data)), counter(1) {  };
 
       protected:
         template<Movable U> friend class Arc;
         // template<Movable U> friend class Boxed;
 
         static inline Fn create(T data) -> RawArc {
-            return RawArc(data);
+            return RawArc(move_obj(data));
         } 
 
         inline Fn increase() -> Void {
@@ -62,16 +62,16 @@ namespace stl { namespace sys { namespace sync {
 
       public:
         inline RawArc(RawArc&& obj) { 
-            this->data    = moveObj(obj.data);
+            this->data    = move_obj(obj.data);
             this->counter = obj.counter;
         };
 
-        inline Fn copy() -> RawArc {
-            // return RawArc(*this->inner);
-        }
+        // inline Fn copy() -> RawArc {
+        //     // return RawArc(*this->inner);
+        // }
 
         inline Fn operator =(RawArc&& obj) -> Void {
-            this->data    = moveObj(obj.data);
+            this->data    = move_obj(obj.data);
             this->counter = obj.counter;
         }
 
@@ -80,11 +80,11 @@ namespace stl { namespace sys { namespace sync {
 
 
     template<Movable T>
-    class Arc final: public Mover, public CanBeCopied<Arc<T>> {
+    class Arc final: public Mover, public CanBeCopied<Arc<T>>, Dropper {
         Boxed<RawArc<T>, DefaultAllocator> inner;
 
-        Arc(T& data):
-        inner(Boxed<RawArc<T>>::create(RawArc<T>(moveObj(data))))
+        Arc(Boxed<RawArc<T>, DefaultAllocator>&& inner):
+            inner(move_obj(inner))
         { }
 
         Arc(RawArc<T>* raw_arc) {
@@ -94,17 +94,30 @@ namespace stl { namespace sys { namespace sync {
 
 
       public:
+        Arc() { }
         Arc(Arc&& obj) {
-            this->inner = moveObj(obj.inner);
+            this->inner = move_obj(obj.inner);
+            obj.drop();
         };
 
-        static inline Fn create(T data) -> Arc {
-            return Arc(data);
+        static inline Fn create(T data) -> EResult<Arc> {
+            Let res = Boxed<RawArc<T>>::create(move_obj(RawArc<T>::create(move_obj(data))));
+            unwrapResOrRetSame(Arc, res, "Failed to create new boxed object while creating new Arc object!");
+            return resOk(Arc, Arc(move_obj(res.unwrap())));
         }
 
         inline Fn copy() -> Arc {
-            Let new_boxed = this->inner.copy();
-            return Arc(new_boxed.as_ptr());
+            return Arc(this->inner.as_ptr());
+        }
+
+        static inline Fn ab_create(T data) -> Arc {
+            Let res = Boxed<RawArc<T>>::ab_create(move_obj(RawArc<T>::create(move_obj(data))));
+            return Arc(move_obj(res));
+        }
+
+        inline Fn ab_copy() -> Arc {
+            Let res = this->inner.copy().unwrap();
+            return Arc(res.as_ptr());
         }
 
         inline Fn operator *() -> T& {
@@ -116,11 +129,12 @@ namespace stl { namespace sys { namespace sync {
         }
 
         inline Fn operator =(Arc&& obj) -> Void {
-            this->inner = moveObj(obj.inner);
+            this->inner = move_obj(obj.inner);
+            obj.drop();
         }
 
         inline ~Arc() {
-            if ((*(this->inner)).decrease()) {
+            if (!this->dropped && (*(this->inner)).decrease()) {
                 this->inner.~Boxed();
             }
         }

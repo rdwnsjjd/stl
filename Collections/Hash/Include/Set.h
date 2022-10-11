@@ -15,10 +15,9 @@
 // You should have received a copy of the GNU General Public License
 // along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _FRAMEWORK_STL_COLLECTIONS_LIST_INC_H_
-#define _FRAMEWORK_STL_COLLECTIONS_LIST_INC_H_
-
-// #include "Include/List.h"
+#ifndef _COLLECTIONS_HASH_INCLUDE_SET_
+#define _COLLECTIONS_HASH_INCLUDE_SET_
 
 
-#endif // _FRAMEWORK_STL_COLLECTIONS_LIST_INC_H_
+
+#endif /* _COLLECTIONS_HASH_INCLUDE_SET_ */

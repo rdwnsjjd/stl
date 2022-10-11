@@ -115,19 +115,19 @@ namespace stl { namespace mem { namespace alloc {
 
     Fn CppAllocator::allocate(Size n, Size size) -> EResult<MRawPtr> {
         // return (MRawPtr) new char[n * size];
-        return resErr(MRawPtr, EK::NotImplemented);
+        return resFail(MRawPtr, EK::NotImplemented);
     }
 
 
     Fn CppAllocator::callocate(Size n, Size size) -> EResult<MRawPtr> {
         // return (MRawPtr) calloc(n, size);
-        return resErr(MRawPtr, EK::NotImplemented);
+        return resFail(MRawPtr, EK::NotImplemented);
     }
 
 
     Fn CppAllocator::reallocate(RawPtr ptr, Size size) -> EResult<MRawPtr> {
         // return (MRawPtr) realloc((Void*) ptr, size);
-        return resErr(MRawPtr, EK::NotImplemented);
+        return resFail(MRawPtr, EK::NotImplemented);
     }
 
 

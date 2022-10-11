@@ -38,7 +38,7 @@ namespace stl { namespace io {
 
       public:
         DefaultDeserializer(DefaultDeserializer&& obj) {
-            this->output = moveObj(obj.output);
+            this->output = move_obj(obj.output);
         }
 
         static Fn create(Vec<MUInt8>& vec) -> DefaultDeserializer {
@@ -50,7 +50,7 @@ namespace stl { namespace io {
         }
 
         Fn push(Vec<MUInt8> o) -> Void {
-            this->output.push(moveObj(o));
+            this->output.push(move_obj(o));
         }
 
         

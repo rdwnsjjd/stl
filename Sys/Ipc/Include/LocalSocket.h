@@ -76,7 +76,7 @@ namespace stl { namespace sys { namespace ipc {
 
 
     inline Fn LocalSocket::connect(Str path) -> EResult<Int32> {
-        return this->bind(moveObj(path));
+        return this->bind(move_obj(path));
     }
 
 
@@ -106,7 +106,7 @@ namespace stl { namespace sys { namespace ipc {
         debugLog("%s", strerror(errno));
         // TODO(emad): handle errors
 
-        return EResult<LocalSocket>::Ok(moveObj(LocalSocket(client_fd, client_addr)));
+        return EResult<LocalSocket>::Ok(move_obj(LocalSocket(client_fd, client_addr)));
     }
 
 

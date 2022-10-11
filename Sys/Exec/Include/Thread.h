@@ -18,6 +18,7 @@
 #ifndef _SYS_EXEC_INCLUDE_THREAD_
 #define _SYS_EXEC_INCLUDE_THREAD_
 
+#include <unistd.h>
 #include <stdio.h>
 #include <pthread.h>
 
@@ -26,10 +27,15 @@
 #include "Framework/STL/Mem/Alloc/Inc"
 #include "Test/Include/Test.h"
 
-using namespace framework::basics;
-using namespace stl::mem::alloc;
+#include "Framework/STL/Sys/Sync/Include/Mutex.h"
+#include "Framework/STL/Sys/Sync/Include/Arc.h"
+
+using namespace stl::sys::sync;
 
 namespace stl { namespace sys { namespace exec {
+
+    using namespace framework::basics;
+    using namespace stl::mem::alloc;
 
     template<Movable T, typename F>
     struct ThreadArg {
@@ -43,7 +49,7 @@ namespace stl { namespace sys { namespace exec {
 
     template<Movable T, typename F>
     Fn thread_main(MPtr handle) -> MHandle {
-        CONST_IF (isSame(T, __)) {
+        CONST_IF (isSame(T, $)) {
             ThreadArgVoid* arg = (ThreadArgVoid*) handle;
             arg->callback();
             DefaultAllocator().deallocate(arg);
@@ -51,7 +57,7 @@ namespace stl { namespace sys { namespace exec {
         }
         CONST_ELSE {
             ThreadArg<T, F>* arg = (ThreadArg<T, F>*) handle;
-            F res = arg->callback(moveObj(arg->data));
+            F res = arg->callback(move_obj(arg->data));
 
             Let mem = (char*) malloc(sizeof(F));
             memcpy(mem, &res, sizeof(F));
@@ -76,14 +82,14 @@ namespace stl { namespace sys { namespace exec {
             T* th_return = NULL;
             pthread_timedjoin_np(this->_handle, (MHandle*) &th_return, NULL);
 
-            CONST_IF (!isSame(T, __)) {
+            CONST_IF (!isSame(T, $)) {
                 Let t = T();
                 memcpy((MPtr) &t, th_return, sizeof(T));
                 DefaultAllocator().deallocate(th_return);
                 return t;
             }
             CONST_ELSE {
-                return $;
+                return _;
             }
         }
 
@@ -102,14 +108,14 @@ namespace stl { namespace sys { namespace exec {
 
       public:
         template<typename F> 
-        static inline Fn spawn(F (*callback)()) -> JoinHandle<std::conditional_t<isSame(F, Void), __, F>> {
+        static inline Fn spawn(F (*callback)()) -> JoinHandle<std::conditional_t<isSame(F, Void), $, F>> {
             PthreadHandle pth = 0;
             Let arg = (ThreadArgVoid*) DefaultAllocator().allocate(1, sizeof(ThreadArgVoid)).unwrap();
             arg->callback = callback;
 
-            pthread_create(&pth, NULL, thread_main<__, F>, arg);
+            pthread_create(&pth, NULL, thread_main<$, F>, arg);
             CONST_IF (isSame(F, Void)) {
-                return JoinHandle<__>(pth);
+                return JoinHandle<$>(pth);
             } 
             CONST_ELSE {
                 return JoinHandle<F>(pth);
@@ -117,22 +123,22 @@ namespace stl { namespace sys { namespace exec {
         }
 
         template<Movable T, typename F> 
-        static inline Fn spawn(T data, F (*callback)(T)) -> JoinHandle<std::conditional_t<isSame(F, Void), __, F>> {
+        static inline Fn spawn(T data, F (*callback)(T)) -> JoinHandle<std::conditional_t<isSame(F, Void), $, F>> {
             PthreadHandle pth = 0;
             Let arg = (ThreadArg<T, F>*) DefaultAllocator().allocate(1, sizeof(ThreadArg<T, F>)).unwrap();
             arg->callback = callback;
-            arg->data     = moveObj(data);
+            arg->data     = move_obj(data);
 
             pthread_create(&pth, NULL, thread_main<T, F>, arg);
             CONST_IF (isSame(F, Void)) {
-                return JoinHandle<__>(pth);
+                return JoinHandle<$>(pth);
             } 
             CONST_ELSE {
                 return JoinHandle<F>(pth);
             }
         }
         
-        static Fn test() -> __;
+        static Fn test() -> $;
     };
 
     Let test = Thread::test();
@@ -141,50 +147,44 @@ namespace stl { namespace sys { namespace exec {
 } // namespace stl 
 
 
-#include <unistd.h>
-#include "Framework/STL/Sys/Sync/Include/Mutex.h"
-#include "Framework/STL/Sys/Sync/Include/Arc.h"
-using namespace stl::sys::sync;
-
-
-Fn stl::sys::exec::Thread::test() -> __ {
+Fn stl::sys::exec::Thread::test() -> $ {
     
-    global_tester.add_test(TestBase::create("thread_test_create_with_unit_arg_and_unit_ret", []() -> MBool {
-        Let thread = Thread::spawn<Void>([]() {
-            printf("This is a simplest thread ever!\n");
-        });
+    // global_tester.add_test(TestBase::create("thread_test_create_with_unit_arg_and_unit_ret", []() -> MBool {
+    //     Let thread = Thread::spawn<Void>([]() {
+    //         printf("This is a simplest thread ever!\n");
+    //     });
 
-        pthread_join(thread._handle, nullptr);
-        Let res = thread.join();
-        evalEqIntLog(res, $);
-    }));
+    //     pthread_join(thread._handle, nullptr);
+    //     Let res = thread.join();
+    //     evalEqIntLog(res, _);
+    // }));
 
     
-    global_tester.add_test(TestBase::create("thread_test_create_with_int_arg_and_int_ret", []() -> MBool {
-        Let thread = Thread::spawn<MInt32, MInt32>(34, [](MInt32) -> MInt32{
-            printf("This is a int arg and return thread!\n");
-            return -74;
-        });
+    // global_tester.add_test(TestBase::create("thread_test_create_with_int_arg_and_int_ret", []() -> MBool {
+    //     Let thread = Thread::spawn<MInt32, MInt32>(34, [](MInt32) -> MInt32{
+    //         printf("This is a int arg and return thread!\n");
+    //         return -74;
+    //     });
 
-        Let res = thread.join();
-        evalEqIntLog(res, -74);
-    }));
+    //     Let res = thread.join();
+    //     evalEqIntLog(res, -74);
+    // }));
 
     
-    global_tester.add_test(TestBase::create("thread_test_create_with_int_arg_and_mutex_ret", []() -> MBool {
-        Let thread = Thread::spawn<MInt32, Mutex<MInt32>>(5, [](MInt32) -> Mutex<MInt32> {
-            Let mutex = Mutex<MInt32>::create(54);
-            mutex.lock().unwrap();
-            return moveObj(mutex);
-        });
-        Let ret = thread.join().lock().unwrap();
-        evalEqIntLog(*ret, 54);
-    }));
+    // global_tester.add_test(TestBase::create("thread_test_create_with_int_arg_and_mutex_ret", []() -> MBool {
+    //     Let thread = Thread::spawn<MInt32, Mutex<MInt32>>(5, [](MInt32) -> Mutex<MInt32> {
+    //         Let mutex = Mutex<MInt32>::create(54);
+    //         mutex.lock().unwrap();
+    //         return move_obj(mutex);
+    //     });
+    //     Let ret = thread.join().lock().unwrap();
+    //     evalEqIntLog(*ret, 54);
+    // }));
 
     
     // global_tester.add_test(TestBase::create("thread_test_create_with_mutex_arg_and_int_ret", []() -> MBool {
     //     Let mutex = Mutex<MInt32>::create(54);
-    //     Let thread = Thread::spawn<Mutex<MInt32>, MInt32>(moveObj(mutex), [](Mutex<MInt32>) -> MInt32 {
+    //     Let thread = Thread::spawn<Mutex<MInt32>, MInt32>(move_obj(mutex), [](Mutex<MInt32>) -> MInt32 {
     //         Let mutex = Mutex<MInt32>::create(54);
     //         Let num = mutex.lock().unwrap();
     //         return *num;
@@ -198,16 +198,16 @@ Fn stl::sys::exec::Thread::test() -> __ {
     
     global_tester.add_test(TestBase::create("thread_test_create_with_arc_mutex_arg_and_int_ret", []() -> MBool {
         Let mutex = Mutex<MInt32>::create(54);
-        Let arc   = Arc<Mutex<MInt32>>::create(moveObj(mutex));
+        Let arc   = Arc<Mutex<MInt32>>::create(move_obj(mutex)).unwrap();
 
         Let arc_copied = arc.copy();
-        Let thread1 = Thread::spawn<Arc<Mutex<MInt32>>, MInt32>(moveObj(arc), [](Arc<Mutex<MInt32>> arc) -> MInt32 {
+        Let thread1 = Thread::spawn<Arc<Mutex<MInt32>>, MInt32>(move_obj(arc), [](Arc<Mutex<MInt32>> arc) -> MInt32 {
             Let locked = (*arc).lock().unwrap();
             sleep(10);
             return *locked;
         });
 
-        // Let thread2 = Thread::spawn<Arc<Mutex<MInt32>>, MInt32>(moveObj(arc_copied), [](Arc<Mutex<MInt32>> arc) -> MInt32 {
+        // Let thread2 = Thread::spawn<Arc<Mutex<MInt32>>, MInt32>(move_obj(arc_copied), [](Arc<Mutex<MInt32>> arc) -> MInt32 {
         //     Let locked = (*arc).lock().unwrap();
         //     sleep(10);
         //     return *locked;
@@ -219,7 +219,7 @@ Fn stl::sys::exec::Thread::test() -> __ {
         evalEqIntLog(res, *num);
     }));
 
-    return $;
+    return _;
 }
 
 

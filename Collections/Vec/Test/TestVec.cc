@@ -35,11 +35,11 @@ MUInt32 thread_callback(Arc<Mutex<Hello>> arg) {
 
 int main() {
     Let mutex = Mutex<Hello>::create(Hello(43));
-    Let arc   = Arc<Mutex<Hello>>::create(moveObj(mutex));
+    Let arc   = Arc<Mutex<Hello>>::create(move_obj(mutex));
 
     Let arc2 = arc.copy();
 
-    Let thread = Thread::spawn<Arc<Mutex<Hello>>, MUInt32>(moveObj(arc), thread_callback);
+    Let thread = Thread::spawn<Arc<Mutex<Hello>>, MUInt32>(move_obj(arc), thread_callback);
     Let res = (*arc2).lock().unwrap();
 
     thread.join();

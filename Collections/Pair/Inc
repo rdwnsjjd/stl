@@ -35,7 +35,7 @@ namespace stl { namespace collections {
 
         Pair(First&& first, Last&& last): 
             _first(first), 
-            _last(moveObj(last)) 
+            _last(move_obj(last)) 
         { /* nothing */ }
 
       public:
@@ -45,7 +45,7 @@ namespace stl { namespace collections {
         }
 
         static inline Fn create(First&& start, Last&& last) -> Pair {
-            return Pair(moveObj(start), moveObj(last));
+            return Pair(move_obj(start), move_obj(last));
         }
 
         inline Fn first() -> First {

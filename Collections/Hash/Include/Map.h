@@ -15,12 +15,27 @@
 // You should have received a copy of the GNU General Public License
 // along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _FRAMEWORK_STL_ITER_INC_H_
-#define _FRAMEWORK_STL_ITER_INC_H_
+#ifndef _COLLECTIONS_HASH_INCLUDE_MAP_
+#define _COLLECTIONS_HASH_INCLUDE_MAP_
 
+#include "Framework/Basics/BasicTypes.h"
+#include "../../BasicVec/Include/BasicVec.h"
+#include "Framework/STL/Iter/Include/Iterator.h"
+#include "Framework/STL/Mem/Alloc/Inc"
+#include "Framework/STL/IO/Serialization/Inc"
 
-#include "Include/Iterator.h"
+namespace stl::collections {
 
+    using namespace framework::basics;
+    using namespace stl::mem::alloc;
+    using namespace stl::iter;
+    using namespace stl::io;
 
+    template<Movable T, Movable U, Allocator A = DefaultAllocator>
+    class HashMap: private Mover, private CanBeCopied<HashMap<T, U, A>>, private Dropper {
 
-#endif // _FRAMEWORK_STL_ITER_INC_H_
+    };
+    
+} // namespace stl::collections
+
+#endif /* _COLLECTIONS_HASH_INCLUDE_MAP_ */

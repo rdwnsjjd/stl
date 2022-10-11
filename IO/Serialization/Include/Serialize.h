@@ -253,7 +253,7 @@ namespace stl { namespace io {
 
 
         Fn serialize_char(MChar v) -> Void {
-            this->_append(moveObj(v));
+            this->_append(move_obj(v));
         }
 
 

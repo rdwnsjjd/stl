@@ -41,10 +41,10 @@ namespace stl { namespace sys { namespace sync {
             this->pth_mutex = { 0 };
         }
 
-        inline Fn unlock() -> EResult<__> override {
+        inline Fn unlock() -> EResult<$> override {
             Let res = pthread_mutex_unlock(&this->pth_mutex);
-            evalOrRetFailWithOsLog(__, res != -1, "Failed to unlock pthread mutex!");
-            return resOk(__, $);
+            evalOrRetFailWithOsLog($, res != -1, "Failed to unlock pthread mutex!");
+            return resOk($, _);
         };
 
       public:
@@ -57,10 +57,10 @@ namespace stl { namespace sys { namespace sync {
             return DefaultLocker();
         }
 
-        inline Fn lock() -> EResult<__> override {
+        inline Fn lock() -> EResult<$> override {
             Let res = pthread_mutex_lock(&this->pth_mutex);
-            evalOrRetFailWithOsLog(__, res != -1, "Failed to lock pthread mutex!");
-            return resOk(__, $);
+            evalOrRetFailWithOsLog($, res != -1, "Failed to lock pthread mutex!");
+            return resOk($, _);
         };
 
         inline Fn operator =(DefaultLocker&& obj) -> Void {
@@ -132,38 +132,38 @@ namespace stl { namespace sys { namespace sync {
         LockerT locker;
     
       public:
-        inline Mutex(T data): data(moveObj(data)), locker(DefaultLocker::create()) { /* nothing */ };
+        inline Mutex(T data): data(move_obj(data)), locker(DefaultLocker::create()) { /* nothing */ };
         inline Mutex() { /* nothing */ }
 
         inline Mutex(Mutex&& obj) {
-            this->data   = moveObj(obj.data);
-            this->locker = moveObj(obj.locker);
+            this->data   = move_obj(obj.data);
+            this->locker = move_obj(obj.locker);
 
             obj.drop();
         }
 
         static inline Fn create(T data) -> Mutex {
-            return Mutex(moveObj(data));
+            return Mutex(move_obj(data));
         }
 
         inline Fn lock() -> EResult<MutexValue<T>> {
             // evalOrRet(
             //     !this->dropped,
-            //     resErr(MutexValue<T>, EK::ValueIsDropped),
+            //     resFail(MutexValue<T>, EK::ValueIsDropped),
             //     "Use of dropped value!"
             // );
             
             unwrapResOrRet(
                 this->locker.lock(), 
-                resErr(MutexValue<T>, EK::MutexFailure),
+                resFail(MutexValue<T>, EK::MutexFailure),
                 "Failed to lock mutex locker!"
             );
             return resOk(MutexValue<T>, MutexValue(&this->data, &this->locker));
         }
 
         inline Fn operator =(Mutex&& obj) -> Void {
-            this->data   = moveObj(obj.data);
-            this->locker = moveObj(obj.locker);
+            this->data   = move_obj(obj.data);
+            this->locker = move_obj(obj.locker);
 
             obj.drop();
         }

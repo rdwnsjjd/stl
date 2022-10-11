@@ -100,7 +100,7 @@
 
 
 //     Fn BasicSerializer::serialize_uint8(MUInt8 v) -> Void {
-//         this->_append(moveObj(v));
+//         this->_append(move_obj(v));
 //     }
 
 
@@ -150,7 +150,7 @@
 
 
 //     Fn BasicSerializer::serialize_char(MChar v) -> Void {
-//         this->_append(moveObj(v));
+//         this->_append(move_obj(v));
 //     }
 
 

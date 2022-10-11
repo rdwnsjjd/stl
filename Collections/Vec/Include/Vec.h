@@ -20,7 +20,7 @@
 
 #include "Framework/Basics/BasicTypes.h"
 #include "../../BasicVec/Include/BasicVec.h"
-#include "Framework/STL/Iter/Inc"
+#include "Framework/STL/Iter/Include/Iterator.h"
 #include "Framework/STL/Mem/Alloc/Inc"
 #include "Framework/STL/IO/Serialization/Inc"
 
@@ -132,7 +132,7 @@ namespace stl { namespace collections {
 
     template<Movable T, Allocator A> 
     inline Vec<T, A>::Vec(Vec&& obj) {
-        this->_inner = moveObj(obj._inner);
+        this->_inner = move_obj(obj._inner);
         this->_len   = obj._len;
 
         obj.drop();
@@ -141,7 +141,7 @@ namespace stl { namespace collections {
 
     template<Movable T, Allocator A> 
     inline Vec<T, A>::Vec(Vec::InnerVec inner, Size len) {
-        this->_inner = moveObj(inner);
+        this->_inner = move_obj(inner);
         this->_len   = len;
     }
 
@@ -157,7 +157,7 @@ namespace stl { namespace collections {
         Let res = BasicVec<T, A>::with_capacity(cap);
         unwrapResOrRet(
             res,
-            resErr(Vec, EK::AllocationFailure),
+            resFail(Vec, EK::AllocationFailure),
             "Failed to create BasicVec with capacity of `%ld`", cap
         );
         return resOk(Vec, Vec(res.unwrap(), 0));
@@ -168,13 +168,13 @@ namespace stl { namespace collections {
     inline Fn Vec<T, A>::copy() -> EResult<Vec<T, A>> {
         Let res = this->_inner.copy();
         unwrapResOrRetSame(Vec, res, "Failed to copy from BasicVec to create new copy of Vec!");
-        return EResult<Vec>::ok(Vec<T, A>(moveObj(res.unwrap()), this->len()));
+        return EResult<Vec>::ok(Vec<T, A>(move_obj(res.unwrap()), this->len()));
     }
 
 
     template<Movable T, Allocator A> 
     inline Fn Vec<T, A>::from(Vec&& vector) -> Vec<T, A> {
-        return Vec(moveObj(vector));
+        return Vec(move_obj(vector));
     }
 
 
@@ -226,7 +226,7 @@ namespace stl { namespace collections {
             this->_inner.reserve(create_proper_allocation_size_(1) + this->_inner.capacity());
         }
 
-        this->_inner.ptr()[this->_len++] = moveObj(data);
+        this->_inner.ptr()[this->_len++] = move_obj(data);
     }
 
 
@@ -238,7 +238,7 @@ namespace stl { namespace collections {
 
         Let len = vec.len();
         for (MIdx i = 0; i < len; i++) {
-            this->_inner.ptr()[this->_len++] = moveObj(vec[i]);
+            this->_inner.ptr()[this->_len++] = move_obj(vec[i]);
         }
     }
 
@@ -252,7 +252,7 @@ namespace stl { namespace collections {
         // for (MSSize i = size - 1; i >= 0; i--) {
         for (MIdx i = 0; i < size; i++) {
             // TODO: change this to copy data
-            this->_inner.ptr()[this->_len++] = moveObj(*(byt + i));
+            this->_inner.ptr()[this->_len++] = move_obj(*(byt + i));
         }
     }
 
@@ -270,12 +270,12 @@ namespace stl { namespace collections {
         Vec<T, A> vec = Vec<T, A>::create();
         for (MSize idx = 0; idx < len; idx++) {
             Let tmp = *(this->as_ptr() + (this->_len - len + idx));
-            vec.push(moveObj(tmp));
+            vec.push(move_obj(tmp));
             // if (!IsPrimitive<int>) {
             //     vec.push((*(this->as_ptr() + (this->_len - len + 1))).copy());
             // }
             // else {
-            //     vec.push(moveObj(*(this->as_ptr() + (this->_len - len + 1))));
+            //     vec.push(move_obj(*(this->as_ptr() + (this->_len - len + 1))));
             // }
         }
         
@@ -355,7 +355,7 @@ namespace stl { namespace collections {
 
     template<Movable T, Allocator A> 
     inline Fn Vec<T, A>::operator =(Vec&& obj) -> Void {
-        this->_inner = moveObj(obj._inner);
+        this->_inner = move_obj(obj._inner);
         this->_len   = obj._len;
 
         obj.drop();
@@ -389,11 +389,11 @@ namespace stl { namespace collections {
 
         for (MIdx idx = 0; idx < len; idx++) {
             Let elem = de.deserialize<BasicDeserializer, T>();
-            vec.push(moveObj(elem));
+            vec.push(move_obj(elem));
         }
         
 
-        return moveObj(vec);
+        return move_obj(vec);
     }
 
     

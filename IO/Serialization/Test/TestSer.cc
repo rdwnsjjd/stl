@@ -73,8 +73,8 @@ struct MyClass: public Mover, public CanBeCopied<MyClass> {
     MyClass() { }
 
     MyClass(MyClass&& obj) {
-        this->my = moveObj(obj.my);
-        this->s  = moveObj(obj.s);
+        this->my = move_obj(obj.my);
+        this->s  = move_obj(obj.s);
     }
     
     MyClass(
@@ -85,13 +85,13 @@ struct MyClass: public Mover, public CanBeCopied<MyClass> {
         MFloat32 e,
         Bool     f,
         String   s
-    ): my(a, b, c, d, e, f), s(moveObj(s)) { }
+    ): my(a, b, c, d, e, f), s(move_obj(s)) { }
 
     Fn copy() -> MyClass {
 
     }
 
-    MyClass(MyStruct my, String s): my(moveObj(my)), s(moveObj(s)) { }
+    MyClass(MyStruct my, String s): my(move_obj(my)), s(move_obj(s)) { }
 
     Fn serialize(BasicSerializer& ser) -> Serialized<MUInt8*> {
         this->s.serialize(ser);
@@ -102,12 +102,12 @@ struct MyClass: public Mover, public CanBeCopied<MyClass> {
     static Fn deserialize(BasicDeserializer& de) -> MyClass {
         Let my  = MyStruct::deserialize(de);
         Let str = String::deserialize(de);
-        return MyClass(moveObj(my), moveObj(str));
+        return MyClass(move_obj(my), move_obj(str));
     }
 
     Fn operator =(MyClass&& obj) -> Void {
-        this->my = moveObj(obj.my);
-        this->s  = moveObj(obj.s);
+        this->my = move_obj(obj.my);
+        this->s  = move_obj(obj.s);
     }
 };
 

@@ -15,34 +15,50 @@
 // You should have received a copy of the GNU General Public License
 // along with sandikCpp.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef _SYS_SYNC_INCLUDE_CONCEPTS_
-#define _SYS_SYNC_INCLUDE_CONCEPTS_
+#ifndef _MEM_ALLOC_INCLUDE_HELPERS_
+#define _MEM_ALLOC_INCLUDE_HELPERS_
 
-#include <pthread.h>
+#include "string.h"
+
 #include "Framework/Basics/BasicTypes.h"
-#include "Framework/Basics/OwnerShip.h"
-#include "Framework/Primitives/Result.h"
+#include "Framework/Basics/BasicDefs.h"
 
-
-namespace stl { namespace sys { namespace sync {
+namespace stl::mem {
 
     using namespace framework;
     using namespace framework::basics;
 
-    class LockerBase: public Mover {
-        protected:
-            virtual Fn lock() -> EResult<$> = 0;
-            virtual Fn unlock() -> EResult<$> = 0;
-            // virtual ~LockerBase() = 0;
-    };
 
-    template <typename T>
-    concept Lockable = std::is_base_of_v<LockerBase, T>;
+    template<typename T>
+    static inline Fn mem_new() -> T* {
+        return new T();
+    }
+
+
+    template<typename T>
+    static inline Fn mem_new(T data) -> T* {
+        return new T(data);
+    }
+
+
+    template<typename T>
+    static inline Fn mem_delete(T* ptr) {
+        delete ptr;
+    }
+
+
+    template<typename T>
+    static inline Fn mem_size() -> MSize {
+        return sizeof(T);
+    }
+
+
+    static inline Fn mem_copy(MPtr src, Ptr dst, Size size) -> Int32 {
+        memcpy(src, dst, size);
+        return 0;
+    }
     
-    
-} // namespace sync 
-} // namespace sys 
-} // namespace stl 
+} // namespace stl::mem 
 
 
-#endif /* _SYS_SYNC_INCLUDE_CONCEPTS_ */
+#endif /* _MEM_ALLOC_INCLUDE_HELPERS_ */

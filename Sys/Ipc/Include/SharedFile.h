@@ -85,12 +85,12 @@ namespace stl { namespace sys { namespace ipc {
 
       public:
         SharedFileContent(SharedFileContent&& obj):
-            _header(moveObj(obj._header)), 
+            _header(move_obj(obj._header)), 
             _body(obj._body)
         { }
 
         Fn operator =(SharedFileContent&& obj) -> Void {
-            this->_header = moveObj(obj._header);
+            this->_header = move_obj(obj._header);
             this->_body   = obj._body;
         }
     };

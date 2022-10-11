@@ -120,18 +120,18 @@ namespace stl {
 
     
     inline String::String(String&& obj) {
-        this->_inner = moveObj(obj._inner);
+        this->_inner = move_obj(obj._inner);
         obj.drop();
     }
 
     
     inline String::String(Vec<MChar>&& vec) {
-        this->_inner = moveObj(vec);
+        this->_inner = move_obj(vec);
     }
 
     
     inline String::String(MChar* ptr, Size len, Size cap) {
-        this->_inner = moveObj(Vec<MChar>::from_raw_ptr((Ptr) ptr, len, cap)).unwrap();
+        this->_inner = move_obj(Vec<MChar>::from_raw_ptr((Ptr) ptr, len, cap)).unwrap();
     }
 
     
@@ -148,19 +148,19 @@ namespace stl {
     inline Fn String::from(Str str) -> String {
         Let len = strlen(str);
         // Let vec = Vec<MChar>::from((Ptr) str, len, len);
-        // return String(moveObj(vec));
+        // return String(move_obj(vec));
     }
 
     
     inline Fn String::from(String&& vector) -> String {
-        return String(moveObj(vector));
+        return String(move_obj(vector));
     }
 
     
     // TODO: need refactor
     template<Iterable I> 
     inline Fn String::from(I&& obj) -> String {
-        return String::from(moveObj(Vec<MChar>::from(moveObj(obj))));
+        return String::from(move_obj(Vec<MChar>::from(move_obj(obj))));
     }
 
     
@@ -175,7 +175,7 @@ namespace stl {
 
     
     inline Fn String::to_vec() -> Vec<MChar> {
-        return moveObj(this->_inner);
+        return move_obj(this->_inner);
     }
 
     
@@ -185,7 +185,7 @@ namespace stl {
 
     
     inline Fn String::push(MChar data) -> Void {
-        this->_inner.push(moveObj(data));
+        this->_inner.push(move_obj(data));
     }
 
     
@@ -236,7 +236,7 @@ namespace stl {
     /* Operator Overloading */
 
     inline Fn String::operator =(String&& obj) -> Void {
-        this->_inner = moveObj(obj._inner);
+        this->_inner = move_obj(obj._inner);
         obj.drop();
     }
 
@@ -247,7 +247,7 @@ namespace stl {
 
 
     inline Fn String::operator +(String&& obj) -> String {
-        this->_inner.push(moveObj(obj._inner));
+        this->_inner.push(move_obj(obj._inner));
         return String(this->_inner.copy().unwrap()); 
     }
 
